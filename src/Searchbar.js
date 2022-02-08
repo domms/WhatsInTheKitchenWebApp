@@ -1,71 +1,146 @@
 import _ from 'lodash';
 import React, {useState, useEffect, useMemo, useCallback} from 'react'
-import { Input } from 'semantic-ui-react';
+import { Input, Button, Divider, Grid, Segment, Container, Icon } from 'semantic-ui-react';
+import { Popup } from 'semantic-ui-react';
 
-const myApiKey = 'e81588e3e11f4014ac748249225696ee';
+import './Searchbar.css';
+
+const myApiKey = '76cd7a9b478041ebb57b248eafa54db3';
 
 const Searchbar = (props) => {
+    const { onRecipesChange } = props;
     const [value, setValue] = useState('');
     const [result, setResult] = useState([]);
+    const [selected, setSelected] = useState([]);
+    
+    const updateValue = useCallback((event) => setValue(event.target.value), [setValue]);
 
-    const updateValue = useCallback ((event) => setValue(event.target.value), [setValue]);
+    const findRecipes = useCallback(() => {
+        if (!_.isEmpty(selected)) {
+            const ingredients = _.join(selected, ',+');
 
-    useEffect(() => { // debounce function delaying send request for api fetch data by 1 second
-        const sendRequest = _.debounce(() => {
-            if(value.length > 0)
-            {
-                fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=1&apiKey=${myApiKey}`).then(
-                    res => res.json()
-                ).then(resData => {
-                    setResult([]);
-                    let searchQuery = value.toLowerCase();
-                    for(const key in resData)
-                    {
-                        let ingredient = resData[key].name.toLowerCase(); 
-                        if(ingredient.slice(0, searchQuery.length).indexOf(searchQuery) !== -1)
-                        {
-                            setResult(prevResult => {
-                                return[...prevResult, resData[key].name]
-                            });
-                        }
-                    }
-                }).catch(error => {
-                    console.log(error);
-                })
-            } else {
-                setResult([]);
-            }
-        }, 1000);
-
-        sendRequest();
-
-        return () => {
-            sendRequest.cancel(); //cancel any previous send request when typing in search bar
+            fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=3&apiKey=${myApiKey}`)
+            .then(res => res.json())
+            .then(resData => {
+                onRecipesChange(resData);
+            }).catch(error => {
+                console.log(error);
+            })
         }
-    }, [value]); //will invoke useEffect when value is changed
+    }, [selected, onRecipesChange]);
 
+    //Live search function
+    const fetchIngredients = useCallback(_.debounce(value => {
+        if(value.length > 0) {
+            fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=6&apiKey=${myApiKey}`).then(
+                res => res.json()
+            ).then(resData => {
+                setResult([]);
+                let searchQuery = value.toLowerCase();
+                for(const key in resData)
+                {
+                    let ingredient = resData[key].name.toLowerCase(); 
+                    if(ingredient.slice(0, searchQuery.length).indexOf(searchQuery) !== -1)
+                    {
+                        setResult(prevResult => {
+                            return[...prevResult, resData[key].name]
+                        });
+                    }
+                }
+            }).catch(error => {
+                console.log(error);
+            })
+        } else {
+            setResult([]);
+        }
+    }, 1000), [setResult]);
+
+    useEffect(() => {
+        fetchIngredients(value);
+    }, [value]); 
+
+    //Add an ingredient to the array
+    const selectIngredient = useCallback((ingredient) => {
+        setSelected(selected => _.uniq([...selected, ingredient])); 
+    }, [setSelected]);
+
+    //Remove an ingredient from the array
+    const removeIngredient = (event) => {
+        const arr = selected.filter((item) => item !== event);
+        setSelected(arr);
+    };
+
+    //Show array items in console
+    useEffect(() => {
+        console.log('Selected', selected);
+    }, [selected]);
+
+    //Program UI
     return(
-        <div>
-            <Input
-            className="ingrediantSearchBar"
-            onChange={updateValue}
-            value={value}
-            icon='food'
-            iconPosition='left'
-            label={{ tag: true, content: 'Add' }}
-            labelPosition='right'
-            placeholder='Search Ingredient'
-            />
-            <div className="ingrediantSearchBack">
-                {result.map((result, index) => (
-                    <a href="#" key={index}>
-                        <div className="ingrediantSearchEntry">
-                            {result}
-                        </div>
-                    </a>
+        <Container textAlign="justified">
+        <Segment placeholder>
+            <Grid columns={3} relaxed='very' stackable>
+                {/* Title of web app/LOGO */}
+                <Grid.Column verticalAlign="center">Whats in the kitchen?</Grid.Column> 
+                {/* Searchbar interface */}
+                <Grid.Column verticalAlign='center'>  
+                            <Input
+                            className="ingrediantSearchBar"
+                            onChange={updateValue}
+                            value={value}
+                            icon='food'
+                            iconPosition='left'
+                            placeholder='Search Ingredient'
+                            />
+                            {/* Result list of ingredients */}
+                            <div className="dataResult">
+                            {result.map((result, index) => (
+                                    <a className="dataItem" onClick={() => selectIngredient(result)} href="#">
+                                        <div key={index} className="ingrediantSearchEntry">
+                                            {result}
+                                        </div>
+                                    </a>
+                                ))}
+                            </div> 
+                            {/* Submit search results */}
+                            <Button
+                                color="green"
+                                onClick={findRecipes}
+                            >
+                                Find Recipes
+                            </Button>
+                    </Grid.Column> 
+                    <Grid.Column verticalAlign="center">
+                        {/* Instructions on how to use web app */}
+                    <Popup
+                    trigger={<Icon enabled color="green" name='question circle' size="big"/>}
+                    content='Search for an ingredient in the search bar and click on an item to add it to your list of ingredients.
+                             Then click the "Find Recipes" button to find recipes that include your selected ingredients below!'
+                    inverted
+                    />
+                </Grid.Column>
+            </Grid> 
+            <Divider horizontal>
+                <div>Ingredients</div>
+            </Divider> 
+            <Grid>
+            {/* Item tags to show selected items and to also deselect items with a button click */}
+            <Grid.Column>
+            <div name="items">
+                {selected.map(item => (
+                    <Button onClick={() => removeIngredient(item)}  
+                    className="itemTag"  
+                    verticalAlign='left' 
+                    color="green"
+                    >
+                        <div className="tagIcon">{item}<Icon name='window close outline'/></div>
+                    </Button>
                 ))}
             </div>
-        </div>
+            </Grid.Column>
+            </Grid>
+        </Segment>
+        </Container>
     );
 };
 

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, {useState, useEffect, useMemo, useCallback} from 'react'
+import React, {useState, useEffect, useCallback} from 'react';
 import { Input, Button, Divider, Grid, Segment, Container, Icon } from 'semantic-ui-react';
 import { Popup } from 'semantic-ui-react';
 
@@ -15,24 +15,37 @@ const Searchbar = (props) => {
     
     const updateValue = useCallback((event) => setValue(event.target.value), [setValue]);
 
-    const findRecipes = useCallback(() => {
+    const findRecipes = useCallback(async () => {
         if (!_.isEmpty(selected)) {
             const ingredients = _.join(selected, ',+');
+            
+            try {
+                const recipes = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=3&apiKey=${myApiKey}`)
+                .then(res => res.json());
 
-            fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=3&apiKey=${myApiKey}`)
-            .then(res => res.json())
-            .then(resData => {
-                onRecipesChange(resData);
-            }).catch(error => {
+                const ids = _.join(_.map(recipes, 'id'), ',');
+
+                const information = await fetch(`https://api.spoonacular.com/recipes/informationBulk?ids=${ids}&apiKey=${myApiKey}`)
+                .then(res => res.json());
+
+                const result = _.map(recipes, (recipe, index) => {
+                    return {
+                        recipe,
+                        information: _.get(information, index)
+                    };
+                });
+
+                onRecipesChange(result);
+            } catch (error) {
                 console.log(error);
-            })
+            }
         }
     }, [selected, onRecipesChange]);
 
     //Live search function
     const fetchIngredients = useCallback(_.debounce(value => {
         if(value.length > 0) {
-            fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=6&apiKey=${myApiKey}`).then(
+            fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=2&apiKey=${myApiKey}`).then(
                 res => res.json()
             ).then(resData => {
                 setResult([]);
@@ -95,7 +108,7 @@ const Searchbar = (props) => {
                             {/* Result list of ingredients */}
                             <div className="dataResult">
                             {result.map((result, index) => (
-                                    <a className="dataItem" onClick={() => selectIngredient(result)} href="#">
+                                    <a key={result} className="dataItem" onClick={() => selectIngredient(result)} href="#">
                                         <div key={index} className="ingrediantSearchEntry">
                                             {result}
                                         </div>
@@ -113,7 +126,7 @@ const Searchbar = (props) => {
                     <Grid.Column verticalAlign="center">
                         {/* Instructions on how to use web app */}
                     <Popup
-                    trigger={<Icon enabled color="green" name='question circle' size="big"/>}
+                    trigger={<Icon enabled="true" color="green" name='question circle' size="big"/>}
                     content='Search for an ingredient in the search bar and click on an item to add it to your list of ingredients.
                              Then click the "Find Recipes" button to find recipes that include your selected ingredients below!'
                     inverted
@@ -128,9 +141,9 @@ const Searchbar = (props) => {
             <Grid.Column>
             <div name="items">
                 {selected.map(item => (
-                    <Button onClick={() => removeIngredient(item)}  
+                    <Button key={item} onClick={() => removeIngredient(item)}  
                     className="itemTag"  
-                    verticalAlign='left' 
+                    // verticalAlign='left' 
                     color="green"
                     >
                         <div className="tagIcon">{item}<Icon name='window close outline'/></div>

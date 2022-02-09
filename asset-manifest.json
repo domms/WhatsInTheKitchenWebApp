@@ -1,16 +1,15 @@
 {
   "files": {
     "main.css": "/WhatsInTheKitchenWebApp/static/css/main.97ab6488.css",
-    "main.js": "/WhatsInTheKitchenWebApp/static/js/main.c629ece3.js",
+    "main.js": "/WhatsInTheKitchenWebApp/static/js/main.0e71dc61.js",
     "static/js/787.5dc0e2a0.chunk.js": "/WhatsInTheKitchenWebApp/static/js/787.5dc0e2a0.chunk.js",
-    "static/media/logo.svg": "/WhatsInTheKitchenWebApp/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/WhatsInTheKitchenWebApp/index.html",
     "main.97ab6488.css.map": "/WhatsInTheKitchenWebApp/static/css/main.97ab6488.css.map",
-    "main.c629ece3.js.map": "/WhatsInTheKitchenWebApp/static/js/main.c629ece3.js.map",
+    "main.0e71dc61.js.map": "/WhatsInTheKitchenWebApp/static/js/main.0e71dc61.js.map",
     "787.5dc0e2a0.chunk.js.map": "/WhatsInTheKitchenWebApp/static/js/787.5dc0e2a0.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.97ab6488.css",
-    "static/js/main.c629ece3.js"
+    "static/js/main.0e71dc61.js"
   ]
 }

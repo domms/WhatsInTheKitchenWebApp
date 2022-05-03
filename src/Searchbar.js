@@ -1,13 +1,14 @@
 import _ from 'lodash';
 import React, {useState, useEffect, useCallback} from 'react';
 import { Input, Button, Divider, Grid, Segment, Container, Icon } from 'semantic-ui-react';
-import { Popup } from 'semantic-ui-react';
-
+import { Popup, Rail, Sticky, Image } from 'semantic-ui-react';
+import RecipeCard from './RecipeCard';
 import './Searchbar.css';
 
-const myApiKey = '76cd7a9b478041ebb57b248eafa54db3';
+const myApiKey = 'e81588e3e11f4014ac748249225696ee';
 
 const Searchbar = (props) => {
+    let offset = 3;
     const { onRecipesChange } = props;
     const [value, setValue] = useState('');
     const [result, setResult] = useState([]);
@@ -15,12 +16,16 @@ const Searchbar = (props) => {
     
     const updateValue = useCallback((event) => setValue(event.target.value), [setValue]);
 
+
+    //fetch API
     const findRecipes = useCallback(async () => {
+
         if (!_.isEmpty(selected)) {
             const ingredients = _.join(selected, ',+');
             
             try {
-                const recipes = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=3&apiKey=${myApiKey}`)
+                
+                const recipes = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=${offset}&apiKey=${myApiKey}`)
                 .then(res => res.json());
 
                 const ids = _.join(_.map(recipes, 'id'), ',');
@@ -33,8 +38,9 @@ const Searchbar = (props) => {
                         recipe,
                         information: _.get(information, index)
                     };
+                    
                 });
-
+                offset += 3;
                 onRecipesChange(result);
             } catch (error) {
                 console.log(error);
@@ -45,7 +51,7 @@ const Searchbar = (props) => {
     //Live search function
     const fetchIngredients = useCallback(_.debounce(value => {
         if(value.length > 0) {
-            fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=2&apiKey=${myApiKey}`).then(
+            fetch(`https://api.spoonacular.com/food/ingredients/autocomplete?query=${value}&number=6&apiKey=${myApiKey}`).then(
                 res => res.json()
             ).then(resData => {
                 setResult([]);
@@ -122,6 +128,9 @@ const Searchbar = (props) => {
                             >
                                 Find Recipes
                             </Button>
+                            <Divider horizontal></Divider>
+                    <Button color="green" onClick={findRecipes}>Load more</Button>
+
                     </Grid.Column> 
                     <Grid.Column verticalAlign="center">
                         {/* Instructions on how to use web app */}
